@@ -13,3 +13,4 @@
  io.github.mabartos.evaluator.client.ClientSensitivityRiskEvaluatorFactory
  io.github.mabartos.evaluator.client.ClientRoleRiskEvaluatorFactory
  io.github.mabartos.evaluator.behavior.ConcurrentSessionRiskEvaluatorFactory
+ io.github.mabartos.evaluator.behavior.HumifortisRiskEvaluatorFactory
