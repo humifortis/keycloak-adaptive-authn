@@ -53,6 +53,11 @@
             <artifactId>keycloak-test-framework-remote</artifactId>
             <version>${keycloak.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak.testframework</groupId>
+            <artifactId>keycloak-test-framework-remote-providers</artifactId>
+            <version>${keycloak.version}</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -65,6 +70,7 @@
                         <java.util.concurrent.ForkJoinPool.common.threadFactory>
                             io.quarkus.bootstrap.forkjoin.QuarkusForkJoinWorkerThreadFactory
                         </java.util.concurrent.ForkJoinPool.common.threadFactory>
+                        <project.version>${keycloak.version}</project.version>
                     </systemPropertyVariables>
                     <argLine>--enable-preview</argLine>
                 </configuration>

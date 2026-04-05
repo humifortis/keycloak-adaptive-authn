@@ -42,7 +42,10 @@ class RiskLevelValidationTest {
                 () -> RiskLevelValidator.validate(levels, "TestGapLevels"));
 
         assertTrue(exception.getMessage().contains("Gap detected"));
-        assertTrue(exception.getMessage().contains("0.33-0.35"));
+        assertTrue(
+                exception.getMessage().contains("0.33-0.35") ||
+                exception.getMessage().contains("0,33-0,35")
+        );
     }
 
     @Test
