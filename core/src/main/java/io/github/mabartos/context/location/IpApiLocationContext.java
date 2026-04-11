@@ -25,6 +25,7 @@ import org.apache.http.util.EntityUtils;
 import org.jboss.logging.Logger;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.models.KeycloakSession;
+import io.github.mabartos.util.InsecureHttpClientUtil;
 import org.keycloak.models.RealmModel;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
@@ -64,7 +65,9 @@ public class IpApiLocationContext extends LocationContext {
                 return Optional.empty();
             }
 
-            var client = httpClientProvider.getHttpClient();
+            var client = Boolean.parseBoolean(System.getenv("INSECURE_SSL"))
+                ? InsecureHttpClientUtil.create()
+                : httpClientProvider.getHttpClient();
             var uriString = Optional.of(ipAddress)
                     .map(IpApiLocationContextFactory.SERVICE_URL)
                     .filter(StringUtil::isNotBlank);

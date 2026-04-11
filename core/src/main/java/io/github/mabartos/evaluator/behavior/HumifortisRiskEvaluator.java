@@ -10,6 +10,11 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
 import org.jboss.logging.Logger;
 import org.keycloak.connections.httpclient.HttpClientProvider;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -19,6 +24,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.Set;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 public class HumifortisRiskEvaluator extends AbstractRiskEvaluator {
     private static final Logger logger = Logger.getLogger(HumifortisRiskEvaluator.class);
@@ -35,7 +41,27 @@ public class HumifortisRiskEvaluator extends AbstractRiskEvaluator {
     private final CloseableHttpClient httpClient;
 
     public HumifortisRiskEvaluator(KeycloakSession session) {
-        this.httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
+        // Use insecure SSL context if INSECURE_SSL=true, else default
+        if ("true".equalsIgnoreCase(System.getenv("INSECURE_SSL"))) {
+            try {
+                TrustManager[] trustAllCerts = new TrustManager[]{
+                    new X509TrustManager() {
+                        public X509Certificate[] getAcceptedIssuers() { return new X509Certificate[0]; }
+                        public void checkClientTrusted(X509Certificate[] certs, String authType) {}
+                        public void checkServerTrusted(X509Certificate[] certs, String authType) {}
+                    }
+                };
+                SSLContext sslContext = SSLContext.getInstance("TLS");
+                sslContext.init(null, trustAllCerts, new SecureRandom());
+                this.httpClient = org.apache.http.impl.client.HttpClients.custom()
+                        .setSSLContext(sslContext)
+                        .build();
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to create insecure SSL context", e);
+            }
+        } else {
+            this.httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
+        }
     }
 
     @Override
@@ -50,8 +76,9 @@ public class HumifortisRiskEvaluator extends AbstractRiskEvaluator {
 
     @Override
     public Risk evaluate(@Nonnull RealmModel realm, @Nullable UserModel knownUser) {
+
         if (knownUser == null) {
-            logger.warnf("Humifortis fail open for entity_id=%s: %s", "unknown", "user is null");
+            logger.warnf("[HumifortisRiskEvaluator] User is null, fail open.");
             return lowestRisk(FAIL_OPEN_REASON);
         }
 
@@ -61,21 +88,25 @@ public class HumifortisRiskEvaluator extends AbstractRiskEvaluator {
         boolean realmAsTenant = Boolean.parseBoolean(getEnvOrDefault(ENV_REALM_AS_TENANT, "true"));
 
         String userId = knownUser.getId() != null ? knownUser.getId() : knownUser.getUsername();
-        String entityId = realmAsTenant ? realm.getName() + ":" + userId : userId;
+        // Always use the canonical entity_id format: user:keycloak:<realmid>:<user_id>
+        String entityId = String.format("user:keycloak:%s:%s", realm.getName(), userId);
+
 
         if (apiKey == null || apiKey.isBlank()) {
-            logger.warnf("Humifortis fail open for entity_id=%s: %s", entityId, "missing HUMIFORTIS_API_KEY");
+            logger.warnf("[HumifortisRiskEvaluator] API key missing for entity_id=%s, fail open.", entityId);
             return lowestRisk(FAIL_OPEN_REASON);
         }
 
+
         if (!apiUrl.toLowerCase(Locale.ROOT).startsWith("https://")) {
-            logger.warnf("Humifortis fail open for entity_id=%s: %s", entityId, "non-HTTPS HUMIFORTIS_API_URL");
+            logger.warnf("[HumifortisRiskEvaluator] Non-HTTPS API URL for entity_id=%s, fail open.", entityId);
             return lowestRisk(FAIL_OPEN_REASON);
         }
 
         try {
+            logger.infof("[HumifortisRiskEvaluator] Preparing to call Humifortis API: url=%s, entity_id=%s", apiUrl, entityId);
             String encodedEntityId = URLEncoder.encode(entityId, StandardCharsets.UTF_8);
-            String requestUrl = apiUrl + "/api/v1/entities/" + encodedEntityId + "/decision";
+            String requestUrl = apiUrl + "/decision/" + encodedEntityId;
 
             var request = new HttpGet(new URIBuilder(requestUrl).build());
             request.setHeader("Accept", "application/json");
@@ -86,15 +117,18 @@ public class HumifortisRiskEvaluator extends AbstractRiskEvaluator {
                     .setSocketTimeout(timeoutMs)
                     .build());
 
+            logger.infof("[HumifortisRiskEvaluator] Sending request to: %s", requestUrl);
             try (var response = httpClient.execute(request)) {
                 int status = response.getStatusLine().getStatusCode();
+                logger.infof("[HumifortisRiskEvaluator] Received HTTP status: %d", status);
                 if (status < 200 || status >= 300 || response.getEntity() == null) {
-                    logger.warnf("Humifortis fail open for entity_id=%s: HTTP %d", entityId, status);
+                    logger.warnf("[HumifortisRiskEvaluator] HTTP error for entity_id=%s: HTTP %d", entityId, status);
                     EntityUtils.consumeQuietly(response.getEntity());
                     return lowestRisk(FAIL_OPEN_REASON);
                 }
 
                 String body = EntityUtils.toString(response.getEntity());
+                logger.infof("[HumifortisRiskEvaluator] API response body: %s", body);
                 var decision = JsonSerialization.readValue(body, HumifortisDecisionResponse.class);
                 String riskLevel = decision.risk_level != null ? decision.risk_level : "MINIMAL";
                 String reason = decision.reason != null && !decision.reason.isBlank()
@@ -102,11 +136,11 @@ public class HumifortisRiskEvaluator extends AbstractRiskEvaluator {
                         : "Humifortis decision received";
 
                 Risk risk = mapRiskLevelToRisk(riskLevel, reason);
-                logger.debugf("Humifortis success for entity_id=%s: risk_level=%s reason=%s", entityId, riskLevel, reason);
+                logger.infof("[HumifortisRiskEvaluator] Final risk: %s, reason: %s", riskLevel, reason);
                 return risk;
             }
         } catch (Exception e) {
-            logger.warnf("Humifortis fail open for entity_id=%s: %s", entityId, e.getMessage());
+            logger.warnf("[HumifortisRiskEvaluator] Exception for entity_id=%s: %s", entityId, e.getMessage());
             return lowestRisk(FAIL_OPEN_REASON);
         }
     }
@@ -142,6 +176,7 @@ public class HumifortisRiskEvaluator extends AbstractRiskEvaluator {
         }
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     static class HumifortisDecisionResponse {
         public String entity_id;
         public String action;

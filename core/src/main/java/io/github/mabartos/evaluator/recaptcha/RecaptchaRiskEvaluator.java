@@ -19,6 +19,7 @@ import org.keycloak.authentication.forms.RecaptchaAssessmentRequest;
 import org.keycloak.authentication.forms.RecaptchaAssessmentResponse;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.models.KeycloakSession;
+import io.github.mabartos.util.InsecureHttpClientUtil;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.ServicesLogger;
@@ -53,7 +54,11 @@ public class RecaptchaRiskEvaluator extends DeviceRiskEvaluator implements Authe
 
     public RecaptchaRiskEvaluator(KeycloakSession session) {
         this.session = session;
-        this.httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
+        if (Boolean.parseBoolean(System.getenv("INSECURE_SSL"))) {
+            this.httpClient = InsecureHttpClientUtil.create();
+        } else {
+            this.httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
+        }
         this.recaptchaSiteKey = RecaptchaAuthenticatorFactory.getSiteKey().orElse("");
         this.recaptchaProjectId = RecaptchaAuthenticatorFactory.getProjectId().orElse("");
         this.recaptchaProjectApiKey = RecaptchaAuthenticatorFactory.getProjectApiKey().orElse("");

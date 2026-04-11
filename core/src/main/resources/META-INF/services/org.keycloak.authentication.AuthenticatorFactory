@@ -7,3 +7,4 @@ io.github.mabartos.level.SimpleRiskLevelConditionFactory
 io.github.mabartos.level.AdvancedRiskLevelsConditionFactory
 io.github.mabartos.evaluator.recaptcha.RecaptchaAuthenticatorFactory
 io.github.mabartos.evaluator.RiskEvaluatorAuthenticatorFactory
+io.github.mabartos.evaluator.behavior.HumifortisRiskAuthenticatorFactory

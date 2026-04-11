@@ -8,6 +8,7 @@ import io.github.mabartos.spi.level.Risk;
 import org.jboss.logging.Logger;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.models.KeycloakSession;
+import io.github.mabartos.util.InsecureHttpClientUtil;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
@@ -37,7 +38,9 @@ public class ClaudeAiEngine implements AiEngine {
             return Optional.empty();
         }
 
-        var httpClient = httpClientProvider.getHttpClient();
+        var httpClient = Boolean.parseBoolean(System.getenv("INSECURE_SSL"))
+            ? InsecureHttpClientUtil.create()
+            : httpClientProvider.getHttpClient();
         boolean enableCaching = ClaudeAiEngineFactory.isCachingEnabled();
 
         // Use AiEngineUtils to handle the HTTP request

@@ -1,15 +1,21 @@
+# Tip: If you get test dependency errors when building locally, use:
+
+# ./mvnw clean package -DskipTests -Dmaven.test.skip=true -Dkeycloak.version=26.4.7
+
+# This skips all test compilation and execution, matching the Docker build behavior.
+
 ![Keycloak](docs/img/adaptive-authentication-logo.png)
 
 # Keycloak Adaptive Authentication
 
-* Change **authentication requirements** in real-time based on wider context
-* **Strengthen security** - Require **MORE** factors when user attempt is suspicious or accessing sensitive resources
-* **Better User Experience** - Require **LESS** factors when risk of fraudulent user is low
-* **Integration with remote services** - For more information about the user or helping evaluating data via remote
+- Change **authentication requirements** in real-time based on wider context
+- **Strengthen security** - Require **MORE** factors when user attempt is suspicious or accessing sensitive resources
+- **Better User Experience** - Require **LESS** factors when risk of fraudulent user is low
+- **Integration with remote services** - For more information about the user or helping evaluating data via remote
   services
-* Gather **more information about user** in a secure way
-* Uses **Risk-based** authentication
-* Uses **AI services** for more complex risk evaluations
+- Gather **more information about user** in a secure way
+- Uses **Risk-based** authentication
+- Uses **AI services** for more complex risk evaluations
 
 <img src="docs/img/github-risk-engine.png" alt="Risk Engine" width="1050"></img>
 
@@ -69,6 +75,7 @@ For more information and setup, see the <a href="docs/ai-engine-integration.md">
 **Privacy & GDPR Compliance:** All user data (IP addresses, device info) is automatically anonymized before being sent to AI services. See [Privacy and Anonymization Guide](docs/privacy-and-anonymization.md) for details.
 
 ## Installation
+
 You can install this extension to your Keycloak deployment either using the generated JAR or deploy it as a Quarkus extension.
 
 ### Generated JAR
@@ -76,7 +83,7 @@ You can install this extension to your Keycloak deployment either using the gene
 This is common approach on how to include Keycloak extension to Keycloak deployment.
 You can just use the generated JAR present in the [GitHub releases]([Latest Release](https://github.com/mabartos/keycloak-adaptive-authn/releases/latest)) assets for this project and put it into the `/providers` folder of your Keycloak installation.
 
-Or you can build your own JAR locally, described in the  [Start guide](docs/start.md), and put it in the folder.
+Or you can build your own JAR locally, described in the [Start guide](docs/start.md), and put it in the folder.
 
 For more details on how to add the JAR to Keycloak installation, see [Installing provider](https://www.keycloak.org/server/configuration-provider#_installing_and_uninstalling_a_provider).
 
@@ -87,6 +94,7 @@ You do not need to take care of transitive dependencies, shaded JARs and problem
 
 Possible way on how to add the extension to Keycloak installation is via tool [Keycloak Quarkus extensions](https://github.com/mabartos/keycloak-quarkus-extensions).
 You can just add the extension to arbitrary version of Keycloak like this:
+
 ```shell
 ./kc-extension.sh add io.github.mabartos:keycloak-adaptive-authn:999.0.0-SNAPSHOT
 ./kc-extension.sh build
@@ -102,17 +110,17 @@ For more details, see the [Add Keycloak Adaptive Authentication extension](https
    - [Slides](https://drive.google.com/file/d/12-vAuVmWqUb3581D8WqWq0uutLbH7tsn/view?usp=sharing)
    - [Talk](https://www.youtube.com/watch?v=TjanummQn7U)
 2. **Adaptive Authentication**
-    - [KeyConf24](https://keyconf.dev/) @ Vienna, Austria 2024
-    - [Slides](https://drive.google.com/file/d/1PESlDBR8P9nQJyPz_H45R3ZS4LjtSV_W/view?usp=sharing)
-    - [Talk](https://www.youtube.com/watch?v=0zWlc08CPuo)
-    - [Demo](https://drive.google.com/file/d/1dv5zWM69-KZyT3OUjLe-3b1GcI8ErDJ2/view?usp=sharing)
+   - [KeyConf24](https://keyconf.dev/) @ Vienna, Austria 2024
+   - [Slides](https://drive.google.com/file/d/1PESlDBR8P9nQJyPz_H45R3ZS4LjtSV_W/view?usp=sharing)
+   - [Talk](https://www.youtube.com/watch?v=0zWlc08CPuo)
+   - [Demo](https://drive.google.com/file/d/1dv5zWM69-KZyT3OUjLe-3b1GcI8ErDJ2/view?usp=sharing)
 3. **AI-powered Keycloak**
-    - OpenShiftAI Roadshow @ Bratislava, Slovakia 2024
-    - [Slides](https://drive.google.com/file/d/1WscEQlWpjYdrOwGDMj9IDV6bARY-4Utn/view?usp=sharing)
+   - OpenShiftAI Roadshow @ Bratislava, Slovakia 2024
+   - [Slides](https://drive.google.com/file/d/1WscEQlWpjYdrOwGDMj9IDV6bARY-4Utn/view?usp=sharing)
 4. **Adaptive Authentication**
-    - Master's thesis completed 2024
-    - (Information might differ)
-    - [Document](https://github.com/mabartos/adaptive-authn-docs/blob/main/Adaptive_Authentication_Final.pdf)
+   - Master's thesis completed 2024
+   - (Information might differ)
+   - [Document](https://github.com/mabartos/adaptive-authn-docs/blob/main/Adaptive_Authentication_Final.pdf)
 
 ## Connected Authentication Policies
 

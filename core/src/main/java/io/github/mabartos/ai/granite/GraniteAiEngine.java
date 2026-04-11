@@ -25,6 +25,7 @@ import io.github.mabartos.spi.level.Risk;
 import io.github.mabartos.spi.ai.AiEngine;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.models.KeycloakSession;
+import io.github.mabartos.util.InsecureHttpClientUtil;
 
 import java.util.Map;
 import java.util.Optional;
@@ -49,7 +50,9 @@ public class GraniteAiEngine implements AiEngine {
             return Optional.empty();
         }
 
-        var httpClient = httpClientProvider.getHttpClient();
+        var httpClient = Boolean.parseBoolean(System.getenv("INSECURE_SSL"))
+            ? InsecureHttpClientUtil.create()
+            : httpClientProvider.getHttpClient();
 
         //No response format for Granite now
 
