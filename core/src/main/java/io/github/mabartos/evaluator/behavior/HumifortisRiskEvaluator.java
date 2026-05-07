@@ -88,8 +88,9 @@ public class HumifortisRiskEvaluator extends AbstractRiskEvaluator {
         boolean realmAsTenant = Boolean.parseBoolean(getEnvOrDefault(ENV_REALM_AS_TENANT, "true"));
 
         String userId = knownUser.getId() != null ? knownUser.getId() : knownUser.getUsername();
-        // Always use the canonical entity_id format: user:keycloak:<realmid>:<user_id>
-        String entityId = String.format("user:keycloak:%s:%s", realm.getName(), userId);
+        String realmId = realm.getId() != null ? realm.getId() : realm.getName();
+        // Always use the canonical entity_id format: user:keycloak:<realm_id>:<user_id>
+        String entityId = String.format("user:keycloak:%s:%s", realmId, userId);
 
 
         if (apiKey == null || apiKey.isBlank()) {
